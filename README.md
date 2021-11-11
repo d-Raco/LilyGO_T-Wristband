@@ -33,7 +33,7 @@ git clone https://github.com/Xinyuan-LilyGO/LilyGo-T-Wristband.git
 
 7. Now that you know what type of wristband you have, in Arduino IDE select `File`-> `Open`. Now you have to traverse to the local T-Wristband repository (the one cloned in step 1) and enter the `examples` directory. There you will find several directories that follow this format: `T-Wristband-<version>`. Access the one that corresponds to the version of your wristband; mine was `T-Wristband-MPU9250`. Finally, select the `T-Wristband-<version>.ino` file; once again, mine was `T-Wristband-MPU9250.ino`.
 
-8. Now we have to install the board, you can follow (this guide)[https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/] if you face any problems. Go to `File` -> `Preferences` and add this URL to the `Additional Boards Manager URLs` field: https://dl.espressif.com/dl/package_esp32_index.json. Then select `OK`.
+8. Now we have to install the board, you can follow [this guide](https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/) if you face any problems. Go to `File` -> `Preferences` and add this URL to the `Additional Boards Manager URLs` field: https://dl.espressif.com/dl/package_esp32_index.json. Then select `OK`.
 
 ![Board url](/assets/images/4_board_url.jpg)
 
