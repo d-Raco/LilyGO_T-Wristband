@@ -72,15 +72,42 @@ git clone https://github.com/Xinyuan-LilyGO/LilyGo-T-Wristband.git
 
 ![Upload](/assets/images/11_upload.jpg)
 
+Now that you have come this far, I strongly recommend you to follow the following guide, because you will save precious time.
+
+## Step by Step guide for OTA Flashing
+
+Now you may wonder if every time you change the code you will have to open the wristband. Don't worry, the answer is no. Here I will teach you how to upload your code via WiFi to the wristband.
+
+1. First of all, you have to go to the `T-Wristband-MPU9250.ino` code and uncomment the `#define ARDUINO_OTA_UPDATE` line. Now upload the code into the wristband and press the wirstband's button. You will see a message on the wristband's screen: 
+```
+Connect hospot name
+T-Wristband
+configure wrist
+```
+
+2. This cryptic message tells you to connect via WiFi to the wristband. Go to your WiFi settings and look for a network called T-Writband. In my case I could not find the network on my computer, but it showed up on my smartphone. In my case, once i connected to it, a notification popped up alerting me that I had to log in, so I clicked it and it redirected me to the page bellow. In case you don't get this pop-up window, open a browser and, in the URL field, type `192.168.4.1` and hit enter.
+
+![Wifi manager](/assets/images/12_wifi_manager.jpg)
+
+3. Now you have to press `Configure WiFi` and select the WiFi access point you use on your computer. You will need to enter its credentials if it's a private network. Once you have entered them, the wristband's screen should change. Now, in Arduino IDE you should be able to go to `Tools` -> `Port` and see that under `Network ports` there is an entry called `T-Wristband...`. Select it.
+
+![Netwrok port](/assets/images/13_network_port.jpg)
+
+4. Once the wristband's network port is selected, upload the code. In my case, a firewall alert appeared asking to grant permission to `espota.exe`. Give permission to both the private and public networks, because if you don't, you will get a `No response from device` error. In the Arduino IDE console you will see `Sending invitation to <IP>` printed. If everything goes well, it will also print `Uploading.....` and your wristband's screen will change to the following:
+
+![Uploading](/assets/images/14_uploading.jpg)
+
+5. Congratulations! Now you can ditch the serial communication board and reassemble the wristband. You now know how to seamlessly upload your code into the wristband. Now it's the moment you've been waiting for - happy coding!
+
 ## Milestones
 - [x] Cable Flash
-- [ ] OTA Flash
-- [ ] Power On/off
-- [ ] Display the time, taking into account the timezone
-- [ ] Display the date, taking into account the timezone
+- [x] OTA Flash
+- [x] Power On/off
+- [x] Display the time, taking into account the timezone
+- [x] Display the date, taking into account the timezone
 - [ ] Display the battery level
-- [ ] Display when it is being recharged
-- [ ] Switch between screens using the button
+- [x] Display when it is being recharged
+- [x] Switch between screens using the button
 - [ ] Implement bluetooth
 - [ ] Calling alert
 - [ ] Music control panel (via bluetooth)

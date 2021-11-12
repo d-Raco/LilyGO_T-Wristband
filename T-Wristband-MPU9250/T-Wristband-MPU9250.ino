@@ -11,8 +11,7 @@
 //  git clone -b development https://github.com/tzapu/WiFiManager.git
 #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
 
-// #define FACTORY_HW_TEST     //! Test RTC and WiFi scan when enabled
-// #define ARDUINO_OTA_UPDATE      //! Enable this line OTA update
+#define ARDUINO_OTA_UPDATE      //! Enable this line OTA update
 
 
 #ifdef ARDUINO_OTA_UPDATE
@@ -73,68 +72,6 @@ void configModeCallback (WiFiManager *myWiFiManager)
 
 }
 
-void scanI2Cdevice(void)
-{
-    uint8_t err, addr;
-    int nDevices = 0;
-    for (addr = 1; addr < 127; addr++) {
-        Wire.beginTransmission(addr);
-        err = Wire.endTransmission();
-        if (err == 0) {
-            Serial.print("I2C device found at address 0x");
-            if (addr < 16)
-                Serial.print("0");
-            Serial.print(addr, HEX);
-            Serial.println(" !");
-            nDevices++;
-        } else if (err == 4) {
-            Serial.print("Unknow error at address 0x");
-            if (addr < 16)
-                Serial.print("0");
-            Serial.println(addr, HEX);
-        }
-    }
-    if (nDevices == 0)
-        Serial.println("No I2C devices found\n");
-    else
-        Serial.println("Done\n");
-}
-
-
-void wifi_scan()
-{
-    tft.setTextColor(TFT_GREEN, TFT_BLACK);
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextDatum(MC_DATUM);
-    tft.setTextSize(1);
-
-    tft.drawString("Scan Network", tft.width() / 2, tft.height() / 2);
-
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
-    delay(100);
-
-    int16_t n = WiFi.scanNetworks();
-    tft.fillScreen(TFT_BLACK);
-    if (n == 0) {
-        tft.drawString("no networks found", tft.width() / 2, tft.height() / 2);
-    } else {
-        tft.setTextDatum(TL_DATUM);
-        tft.setCursor(0, 0);
-        for (int i = 0; i < n; ++i) {
-            sprintf(buff,
-                    "[%d]:%s(%d)",
-                    i + 1,
-                    WiFi.SSID(i).c_str(),
-                    WiFi.RSSI(i));
-            Serial.println(buff);
-            tft.println(buff);
-        }
-    }
-    WiFi.mode(WIFI_OFF);
-}
-
-
 void drawProgressBar(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint8_t percentage, uint16_t frameColor, uint16_t barColor)
 {
     if (percentage == 0) {
@@ -145,70 +82,6 @@ void drawProgressBar(uint16_t x0, uint16_t y0, uint16_t w, uint16_t h, uint8_t p
     uint16_t barWidth = w - 2 * margin;
     tft.drawRoundRect(x0, y0, w, h, 3, frameColor);
     tft.fillRect(x0 + margin, y0 + margin, barWidth * percentage / 100.0, barHeight, barColor);
-}
-
-
-void factoryTest()
-{
-    scanI2Cdevice();
-    delay(2000);
-
-    tft.fillScreen(TFT_BLACK);
-    tft.drawString("RTC Interrupt self test", 0, 0);
-
-    int yy = 2019, mm = 5, dd = 15, h = 2, m = 10, s = 0;
-    rtc.begin(Wire);
-    rtc.setDateTime(yy, mm, dd, h, m, s);
-    delay(500);
-    RTC_Date dt = rtc.getDateTime();
-    if (dt.year != yy || dt.month != mm || dt.day != dd || dt.hour != h || dt.minute != m) {
-        tft.setTextColor(TFT_RED, TFT_BLACK);
-        tft.fillScreen(TFT_BLACK);
-        tft.drawString("Write DateTime FAIL", 0, 0);
-    } else {
-        tft.setTextColor(TFT_GREEN, TFT_BLACK);
-        tft.fillScreen(TFT_BLACK);
-        tft.drawString("Write DateTime PASS", 0, 0);
-    }
-
-    delay(2000);
-
-    //! RTC Interrupt Test
-    pinMode(RTC_INT_PIN, INPUT_PULLUP); //need change to rtc_pin
-    attachInterrupt(RTC_INT_PIN, [] {
-        rtcIrq = 1;
-    }, FALLING);
-
-    rtc.disableAlarm();
-
-    rtc.setDateTime(2019, 4, 7, 9, 5, 57);
-
-    rtc.setAlarmByMinutes(6);
-
-    rtc.enableAlarm();
-
-    for (;;) {
-        snprintf(buff, sizeof(buff), "%s", rtc.formatDateTime());
-        Serial.print("\t");
-        Serial.println(buff);
-        tft.fillScreen(TFT_BLACK);
-        tft.drawString(buff, 0, 0);
-
-        if (rtcIrq) {
-            rtcIrq = 0;
-            detachInterrupt(RTC_INT_PIN);
-            rtc.resetAlarm();
-            break;
-        }
-        delay(1000);
-    }
-    tft.setTextColor(TFT_GREEN, TFT_BLACK);
-    tft.fillScreen(TFT_BLACK);
-    tft.drawString("RTC Interrupt PASS", 0, 0);
-    delay(2000);
-
-    wifi_scan();
-    delay(2000);
 }
 
 void setupWiFi()
@@ -325,10 +198,6 @@ void setup(void)
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
     Wire.setClock(400000);
 
-#ifdef FACTORY_HW_TEST
-    factoryTest();
-#endif
-
     setupRTC();
 
     setupMPU9250();
@@ -424,7 +293,7 @@ void go_to_sleep()
 {
     IMU.setSleepEnabled(true);
     //Serial.println("Go to Sleep");
-    //delay(3000);
+    delay(1000);
     tft.writecommand(ST7735_SLPIN);
     tft.writecommand(ST7735_DISPOFF);
     esp_sleep_enable_ext1_wakeup(GPIO_SEL_33, ESP_EXT1_WAKEUP_ANY_HIGH);
@@ -459,9 +328,9 @@ void loop()
             tft.fillScreen(TFT_BLACK);
             omm = 99;
             func_select = func_select + 1 > 2 ? 0 : func_select + 1;
-            digitalWrite(LED_PIN, HIGH);
-            delay(100);
-            digitalWrite(LED_PIN, LOW);
+            //digitalWrite(LED_PIN, HIGH);
+            //delay(100);
+            //digitalWrite(LED_PIN, LOW);
             pressed = true;
             pressedTime = millis();
         } else {
