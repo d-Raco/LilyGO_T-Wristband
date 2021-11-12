@@ -1,4 +1,4 @@
-# LILYGO_T-Wristband
+# LilyGO_T-Wristband
  Programmable wristband
 
 ## Step by Step guide for cable Flashing
