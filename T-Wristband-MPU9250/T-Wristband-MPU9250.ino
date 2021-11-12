@@ -6,7 +6,11 @@
 #include <WiFi.h>
 #include "sensor.h"
 #include "esp_adc_cal.h"
-#include "charge.h"
+#include "assets/charge.h"
+#include "assets/battery1.h"
+#include "assets/battery2.h"
+#include "assets/battery3.h"
+#include "assets/battery4.h"
 
 //  git clone -b development https://github.com/tzapu/WiFiManager.git
 #include <WiFiManager.h>         //https://github.com/tzapu/WiFiManager
@@ -29,7 +33,7 @@
 #define BATT_ADC_PIN        35
 #define VBUS_PIN            36
 #define TP_PWR_PIN          25
-#define LED_PIN             4
+#define LED_PIN             4 //Led and Vibration
 #define CHARGE_PIN          32
 
 extern MPU9250 IMU;
@@ -318,6 +322,9 @@ void loop()
         } else {
             tft.fillRect(140, 55, 16, 16, TFT_BLACK);
         }
+    }
+    else {
+      //tft.pushImage(144, 55, 8, 16, battery1); //posx, posy, width, height, var
     }
 
 
