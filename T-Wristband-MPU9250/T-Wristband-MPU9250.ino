@@ -45,6 +45,8 @@ WiFiManager wifiManager;
 char buff[256];
 bool rtcIrq = false;
 bool initial = 1;
+bool initial_action = 1;
+bool update_func = 0;
 bool otaStart = false;
 
 uint8_t func_select = 0;
@@ -56,10 +58,14 @@ int vref = 1100;
 
 bool pressed = false;
 uint32_t pressedTime = 0;
+uint32_t lastTimePress = 0;
+int inactiveTime = 10000;
+bool dont_sleep = 0;
+int actionTime = 1000;
 bool charge_indication = false;
 bool battery_indication = true;
 
-int battery_state = 1;
+int battery_state = 0;
 
 uint8_t hh, mm, ss ;
 
@@ -211,10 +217,6 @@ void setup(void)
 
     setupADC();
 
-    setupWiFi();
-
-    setupOTA();
-
     tft.fillScreen(TFT_BLACK);
 
     tft.setTextColor(TFT_YELLOW, TFT_BLACK); // Note: the new fonts do not draw the background colour
@@ -305,6 +307,11 @@ void RTC_Show()
         targetTime = millis() + 1000;
         if (ss == 0 || initial) {
             initial = 0;
+            if (digitalRead(CHARGE_PIN) == LOW) {
+                charge_indication = true;
+            } else {
+                battery_indication = true;
+            }
             tft.setTextColor(TFT_GREEN, TFT_BLACK);
             tft.setCursor (8, 60);
             tft.print(__DATE__); // This uses the standard ADAFruit small font
@@ -384,8 +391,43 @@ void print_battery_level() {
   }
 }
 
+void OTA_begin()
+{
+  if (initial_action) {
+    dont_sleep = 1;
+    initial_action = 0;
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextColor(TFT_GREEN);
+    tft.drawString("OTA start",  50, tft.height() / 2 );
+
+    setupWiFi();
+    setupOTA();
+  }
+}
+
+void OTA_page()
+{
+  if (initial) {
+    initial = 0;
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextColor(TFT_GREEN);
+    tft.drawString("Press for 1s",  42, tft.height() / 2 - 10);
+    tft.drawString("to access OTA",  40, tft.height() / 2  + 10);
+  }
+}
+
+void resetWiFi() {
+  tft.fillScreen(TFT_BLACK);
+  tft.drawString("Reset WiFi Setting",  20, tft.height() / 2 );
+  delay(3000);
+  wifiManager.resetSettings();
+  wifiManager.erase(true);
+  esp_restart();
+}
+
 void go_to_sleep()
 {
+    tft.fillScreen(TFT_BLACK);
     IMU.setSleepEnabled(true);
     //Serial.println("Go to Sleep");
     delay(1000);
@@ -395,6 +437,19 @@ void go_to_sleep()
     esp_deep_sleep_start();
 }
 
+void page_action()
+{
+  switch (func_select) {
+    case 0:
+        go_to_sleep();
+        break;
+    case 1:
+        OTA_begin();
+        break;
+    default:
+        break;
+    }
+}
 
 void loop()
 {
@@ -405,6 +460,9 @@ void loop()
     //! If OTA starts, skip the following operation
     if (otaStart)
         return;
+
+    if (!dont_sleep && (millis() - lastTimePress > inactiveTime))
+      go_to_sleep();
 
     if (charge_indication) {
         charge_indication = false;
@@ -421,26 +479,28 @@ void loop()
 
     if (digitalRead(TP_PIN_PIN) == HIGH) {
         if (!pressed) {
-            initial = 1;
-            targetTime = millis() + 1000;
-            tft.fillScreen(TFT_BLACK);
-            omm = 99;
-            func_select = func_select + 1 > 2 ? 0 : func_select + 1;
-            //digitalWrite(LED_PIN, HIGH);
-            //delay(100);
-            //digitalWrite(LED_PIN, LOW);
+            initial_action = 1;
+            update_func = 1;
             pressed = true;
             pressedTime = millis();
         } else {
-            if (millis() - pressedTime > 3000) {
-                tft.fillScreen(TFT_BLACK);
-                tft.drawString("Reset WiFi Setting",  20, tft.height() / 2 );
-                delay(3000);
-                wifiManager.resetSettings();
-                wifiManager.erase(true);
-                esp_restart();
+            if (millis() - pressedTime > actionTime) {
+              update_func = 0;
+              page_action();
             }
         }
+    } else if (update_func) {
+      initial = 1;
+      targetTime = millis() + 1000;
+      update_func = 0;
+      tft.fillScreen(TFT_BLACK);
+      omm = 99;
+      func_select = func_select + 1 > 1 ? 0 : func_select + 1;
+      //digitalWrite(LED_PIN, HIGH);
+      //delay(100);
+      //digitalWrite(LED_PIN, LOW);
+      dont_sleep = 0;
+      lastTimePress = millis();
     } else {
         pressed = false;
     }
@@ -450,10 +510,7 @@ void loop()
         RTC_Show();
         break;
     case 1:
-        go_to_sleep();
-        break;
-    case 2:
-        //change screen after press
+        OTA_page();
         break;
     default:
         break;

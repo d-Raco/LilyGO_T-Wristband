@@ -9,6 +9,9 @@
 - [x] Display the battery level
 - [x] Display when it is being recharged
 - [x] Switch between screens using the button
+- [x] Sleep when incative 10s
+- [x] Long press functionalities
+- [x] OTA screen
 - [ ] Implement bluetooth
 - [ ] Calling alert
 - [ ] Music control panel (via bluetooth)
