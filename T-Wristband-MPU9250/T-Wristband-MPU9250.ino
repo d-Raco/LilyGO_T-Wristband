@@ -57,6 +57,9 @@ int vref = 1100;
 bool pressed = false;
 uint32_t pressedTime = 0;
 bool charge_indication = false;
+bool battery_indication = true;
+
+int battery_state = 1;
 
 uint8_t hh, mm, ss ;
 
@@ -228,18 +231,67 @@ void setup(void)
     pinMode(CHARGE_PIN, INPUT_PULLUP);
     attachInterrupt(CHARGE_PIN, [] {
         charge_indication = true;
+        battery_indication = !charge_indication;
     }, CHANGE);
 
     if (digitalRead(CHARGE_PIN) == LOW) {
         charge_indication = true;
+        battery_indication = !charge_indication;
     }
 }
 
-String getVoltage()
+float getVoltage()
 {
     uint16_t v = analogRead(BATT_ADC_PIN);
     float battery_voltage = ((float)v / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
-    return String(battery_voltage) + "V";
+    return battery_voltage;
+}
+
+float calculateBatteryPerc(float maxi, float mini, float pmaxi, float pmini, float volt)
+{
+  // Calculates an approximate value of the precentage
+  float ratio = (volt - mini) * 100 / (maxi - mini);
+  return ((pmaxi - pmini) * ratio) / 100 + pmini;
+}
+
+float getBatteryPerc()
+{
+  // Gets the percentage of battery capacity based on its voltage (considering the voltage analysis of a lithium battery and its relationship with its capacity).
+  // https://www.programmerclick.com/article/83262164670/
+  // The voltage roughly goes from 4.34 to 2.5
+  float volt = getVoltage();
+  float p;
+  
+  if (volt >= 4.2)
+    p = 100;
+  else if (volt >= 4.08)
+    p = calculateBatteryPerc(4.2, 4.08, 100, 90, volt);
+  else if (volt >= 4)
+    p = calculateBatteryPerc(4.08, 4, 90, 80, volt);
+  else if (volt >= 3.93)
+    p = calculateBatteryPerc(4, 3.93, 80, 70, volt);
+  else if (volt >= 3.87)
+    p = calculateBatteryPerc(3.93, 3.87, 70, 60, volt);
+  else if (volt >= 3.82)
+    p = calculateBatteryPerc(3.87, 3.82, 60, 50, volt);
+  else if (volt >= 3.79)
+    p = calculateBatteryPerc(3.82, 3.79, 50, 40, volt);
+  else if (volt >= 3.77)
+    p = calculateBatteryPerc(3.79, 3.77, 40, 30, volt);
+  else if (volt >= 3.73)
+    p = calculateBatteryPerc(3.77, 3.73, 30, 20, volt);
+  else if (volt >= 3.7)
+    p = calculateBatteryPerc(3.73, 3.7, 20, 15, volt);
+  else if (volt >= 3.68)
+    p = calculateBatteryPerc(3.7, 3.68, 15, 10, volt);
+  else if (volt >= 3.5)
+    p = calculateBatteryPerc(3.68, 3.5, 10, 5, volt);
+  else if (volt >= 2.5)
+    p = calculateBatteryPerc(3.5, 2.5, 5, 0, volt);
+  else
+    p = 0;
+
+  return p;
 }
 
 void RTC_Show()
@@ -259,7 +311,23 @@ void RTC_Show()
         }
 
         tft.setTextColor(TFT_BLUE, TFT_BLACK);
-        tft.drawCentreString(getVoltage(), 120, 60, 1); // Next size up font 2
+        
+        float per = getBatteryPerc();
+        if (digitalRead(CHARGE_PIN) != LOW) {
+          if (per >= 0 && per <= 10 && battery_state != 4) {
+            battery_indication = true;
+          }
+          else if (per > 10 && per <= 30 && battery_state != 3) {
+            battery_indication = true;
+          }
+          else if (per > 30 && per <= 50 && battery_state != 2) {
+            battery_indication = true;
+          }
+          else if (per > 50 && per <= 100 && battery_state != 1) {
+            battery_indication = true;
+          }
+        }
+        tft.drawCentreString(String(per) + "%", 120, 60, 1); // Next size up font 2
 
 
         // Update digital time
@@ -293,6 +361,29 @@ void RTC_Show()
     }
 }
 
+void print_battery_level() {
+  tft.fillRect(140, 55, 16, 16, TFT_BLACK);
+  battery_indication = false;
+  float percentage = getBatteryPerc();
+  
+  if (percentage <= 10) {
+    battery_state = 4;
+    tft.pushImage(144, 55, 8, 16, battery4); //posx, posy, width, height, var
+  }
+  else if (percentage <= 30) {
+    battery_state = 3;
+    tft.pushImage(144, 55, 8, 16, battery3);
+  }
+  else if (percentage <= 50) {
+    battery_state = 2;
+    tft.pushImage(144, 55, 8, 16, battery2);
+  }
+  else {
+    battery_state = 1;
+    tft.pushImage(144, 55, 8, 16, battery1);
+  }
+}
+
 void go_to_sleep()
 {
     IMU.setSleepEnabled(true);
@@ -320,11 +411,11 @@ void loop()
         if (digitalRead(CHARGE_PIN) == LOW) {
             tft.pushImage(140, 55, 16, 16, charge);
         } else {
-            tft.fillRect(140, 55, 16, 16, TFT_BLACK);
+            print_battery_level();
         }
     }
-    else {
-      //tft.pushImage(144, 55, 8, 16, battery1); //posx, posy, width, height, var
+    else if (battery_indication) {
+      print_battery_level();
     }
 
 

@@ -6,7 +6,7 @@
 - [x] Power On/off
 - [x] Display the time, taking into account the timezone
 - [x] Display the date, taking into account the timezone
-- [ ] Display the battery level
+- [x] Display the battery level
 - [x] Display when it is being recharged
 - [x] Switch between screens using the button
 - [ ] Implement bluetooth
