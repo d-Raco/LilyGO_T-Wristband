@@ -1,3 +1,5 @@
+<p align="center"><a href="https://github.com/Rymond3/LilyGO_T-Wristband"><img width="50%" src="assets/images/0_twristband.png" /></a></p>
+
 # LilyGO_T-Wristband
 Step by step guide to program the LilyGO-ttgo-twristband 
 
