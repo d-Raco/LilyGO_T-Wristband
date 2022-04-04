@@ -1,5 +1,5 @@
 # LilyGO_T-Wristband
- Programmable wristband
+Step by step guide to program the LilyGO-ttgo-twristband 
 
 ## Step by Step guide for cable Flashing
 
