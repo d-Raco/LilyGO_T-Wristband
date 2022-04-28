@@ -59,7 +59,7 @@ int vref = 1100;
 bool pressed = false;
 uint32_t pressedTime = 0;
 uint32_t lastTimePress = 0;
-int inactiveTime = 10000;
+int inactiveTime = 6000;
 bool dont_sleep = 0;
 int actionTime = 1000;
 bool charge_indication = false;
@@ -262,7 +262,7 @@ float getBatteryPerc()
   // https://www.programmerclick.com/article/83262164670/
   // The voltage roughly goes from 4.34 to 2.5
   float volt = getVoltage();
-  float p;
+  int p;
   
   if (volt >= 4.2)
     p = 100;
@@ -319,7 +319,7 @@ void RTC_Show()
 
         tft.setTextColor(TFT_BLUE, TFT_BLACK);
         
-        float per = getBatteryPerc();
+        int per = getBatteryPerc();
         if (digitalRead(CHARGE_PIN) != LOW) {
           if (per >= 0 && per <= 10 && battery_state != 4) {
             battery_indication = true;
@@ -375,19 +375,19 @@ void print_battery_level() {
   
   if (percentage <= 10) {
     battery_state = 4;
-    tft.pushImage(144, 55, 8, 16, battery4); //posx, posy, width, height, var
+    tft.pushImage(135, 55, 8, 16, battery4); //posx, posy, width, height, var
   }
   else if (percentage <= 30) {
     battery_state = 3;
-    tft.pushImage(144, 55, 8, 16, battery3);
+    tft.pushImage(135, 55, 8, 16, battery3);
   }
   else if (percentage <= 50) {
     battery_state = 2;
-    tft.pushImage(144, 55, 8, 16, battery2);
+    tft.pushImage(135, 55, 8, 16, battery2);
   }
   else {
     battery_state = 1;
-    tft.pushImage(144, 55, 8, 16, battery1);
+    tft.pushImage(135, 55, 8, 16, battery1);
   }
 }
 
@@ -427,12 +427,21 @@ void resetWiFi() {
 
 void go_to_sleep()
 {
-    tft.fillScreen(TFT_BLACK);
+    //tft.fillScreen(TFT_BLACK);
     IMU.setSleepEnabled(true);
     //Serial.println("Go to Sleep");
-    delay(1000);
+    //delay(1000);
+    //rtc.clearTimer();
+    //rtc.resetAlarm();
+    //rtc.disableAlarm();
+    //rtc.disableCLK();
+    //rtc.disableTimer();
+    //tft.writecommand(ST7735_SWRESET);
+    //delay(100);
     tft.writecommand(ST7735_SLPIN);
+    //delay(150);
     tft.writecommand(ST7735_DISPOFF);
+    delay(1500);
     esp_sleep_enable_ext1_wakeup(GPIO_SEL_33, ESP_EXT1_WAKEUP_ANY_HIGH);
     esp_deep_sleep_start();
 }
@@ -467,7 +476,7 @@ void loop()
     if (charge_indication) {
         charge_indication = false;
         if (digitalRead(CHARGE_PIN) == LOW) {
-            tft.pushImage(140, 55, 16, 16, charge);
+            tft.pushImage(131, 55, 16, 16, charge);
         } else {
             print_battery_level();
         }
