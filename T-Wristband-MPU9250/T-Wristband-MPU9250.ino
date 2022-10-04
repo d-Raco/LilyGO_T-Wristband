@@ -59,13 +59,10 @@ int vref = 1100;
 bool pressed = false;
 uint32_t pressedTime = 0;
 uint32_t lastTimePress = 0;
-int inactiveTime = 6000;
+int inactiveTime = 10000;
 bool dont_sleep = 0;
 int actionTime = 1000;
 bool charge_indication = false;
-bool battery_indication = true;
-
-int battery_state = 0;
 
 uint8_t hh, mm, ss ;
 
@@ -233,12 +230,10 @@ void setup(void)
     pinMode(CHARGE_PIN, INPUT_PULLUP);
     attachInterrupt(CHARGE_PIN, [] {
         charge_indication = true;
-        battery_indication = !charge_indication;
     }, CHANGE);
 
     if (digitalRead(CHARGE_PIN) == LOW) {
         charge_indication = true;
-        battery_indication = !charge_indication;
     }
 }
 
@@ -309,30 +304,24 @@ void RTC_Show()
             initial = 0;
             if (digitalRead(CHARGE_PIN) == LOW) {
                 charge_indication = true;
-            } else {
-                battery_indication = true;
             }
             tft.setTextColor(TFT_GREEN, TFT_BLACK);
             tft.setCursor (8, 60);
             tft.print(__DATE__); // This uses the standard ADAFruit small font
         }
-
-        tft.setTextColor(TFT_BLUE, TFT_BLACK);
         
         int per = getBatteryPerc();
-        if (digitalRead(CHARGE_PIN) != LOW) {
-          if (per >= 0 && per <= 10 && battery_state != 4) {
-            battery_indication = true;
-          }
-          else if (per > 10 && per <= 30 && battery_state != 3) {
-            battery_indication = true;
-          }
-          else if (per > 30 && per <= 50 && battery_state != 2) {
-            battery_indication = true;
-          }
-          else if (per > 50 && per <= 100 && battery_state != 1) {
-            battery_indication = true;
-          }
+        if (per >= 0 && per <= 10) {
+          tft.setTextColor(TFT_RED, TFT_BLACK);
+        }
+        else if (per > 10 && per <= 30) {
+          tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+        }
+        else if (per > 30 && per <= 70) {
+          tft.setTextColor(TFT_BLUE, TFT_BLACK);
+        }
+        else if (per > 70 && per <= 100) {
+          tft.setTextColor(TFT_GREEN, TFT_BLACK);
         }
         tft.drawCentreString(String(per) + "%", 120, 60, 1); // Next size up font 2
 
@@ -370,23 +359,18 @@ void RTC_Show()
 
 void print_battery_level() {
   tft.fillRect(140, 55, 16, 16, TFT_BLACK);
-  battery_indication = false;
   float percentage = getBatteryPerc();
   
   if (percentage <= 10) {
-    battery_state = 4;
     tft.pushImage(135, 55, 8, 16, battery4); //posx, posy, width, height, var
   }
   else if (percentage <= 30) {
-    battery_state = 3;
     tft.pushImage(135, 55, 8, 16, battery3);
   }
   else if (percentage <= 50) {
-    battery_state = 2;
     tft.pushImage(135, 55, 8, 16, battery2);
   }
   else {
-    battery_state = 1;
     tft.pushImage(135, 55, 8, 16, battery1);
   }
 }
@@ -477,12 +461,7 @@ void loop()
         charge_indication = false;
         if (digitalRead(CHARGE_PIN) == LOW) {
             tft.pushImage(131, 55, 16, 16, charge);
-        } else {
-            print_battery_level();
         }
-    }
-    else if (battery_indication) {
-      print_battery_level();
     }
 
 

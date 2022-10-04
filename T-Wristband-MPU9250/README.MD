@@ -9,7 +9,7 @@
 - [x] Display the battery level
 - [x] Display when it is being recharged
 - [x] Switch between screens using the button
-- [x] Sleep when incative 6s
+- [x] Sleep when incative 10s
 - [x] Long press functionalities
 - [x] OTA screen
 - [ ] Implement bluetooth
@@ -18,3 +18,4 @@
 - [ ] Display messages (via bluetooth)
 - [ ] Display calendar (via bluetooth)
 - [ ] Display the weather, taking into account the location
+- [ ] Implement alarms
